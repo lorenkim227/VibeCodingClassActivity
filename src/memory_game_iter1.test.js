@@ -10,7 +10,8 @@
  * 3. Run: npm test
  */
 
-//import '@testing-library/jest-dom';
+require('@testing-library/jest-dom');
+
 
 // Mock the game HTML structure
 const setupGameHTML = () => {
