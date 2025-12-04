@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Match - Card Game</title>
+    
+    <!-- Bootstrap 5.3.8 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    
+    <!-- Custom Styles -->
+    <style>
+        :root {
+            --apple-blue: #007AFF;
+            --apple-gray: #F5F5F7;
+            --apple-dark: #1D1D1F;
+            --apple-light: #FBFBFD;
+            --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--apple-dark);
+        }
+
+        .game-container {
+            background: var(--apple-light);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 900px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: #86868b;
+            font-weight: 400;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .stats {
+            display: flex;
+            gap: 24px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #86868b;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--apple-dark);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .difficulty-selector {
+            display: flex;
+            gap: 8px;
+            background: white;
+            padding: 6px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .difficulty-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: #86868b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .difficulty-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .difficulty-btn:hover:not(.active) {
+            background: var(--apple-gray);
+            color: var(--apple-dark);
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 32px;
+            padding: 24px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+        }
+
+        /* Card styles */
+        .card {
+            aspect-ratio: 1;
+            position: relative;
+            cursor: pointer;
+            perspective: 1000px;
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .card-back {
+            background: white;
+            transform: rotateY(180deg);
+            border: 3px solid #f0f0f0;
+        }
+
+        .card:hover .card-front {
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Card front pattern */
+        .card-front::before {
+            content: '?';
+            font-size: 3rem;
+            opacity: 0.3;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 24px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .stats {
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .stat-item {
+                flex: 1;
+                text-align: center;
+            }
+
+            .difficulty-selector {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .btn-primary {
+                width: 100%;
+            }
+
+            .game-board {
+                gap: 12px;
+                padding: 16px;
+            }
+
+            .card-face {
+                font-size: 2rem;
+            }
+        }
+
+        /* Smooth fade-in animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .game-container {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Memory Match</h1>
+            <p>Find all matching pairs to win the game</p>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="controls">
+            <!-- Stats -->
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Moves</div>
+                    <div class="stat-value" id="moves">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Time</div>
+                    <div class="stat-value" id="timer">00:00</div>
+                </div>
+            </div>
+
+            <!-- Difficulty Selector -->
+            <div class="difficulty-selector">
+                <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+                <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+                <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+            </div>
+
+            <!-- New Game Button -->
+            <button class="btn btn-primary" id="newGameBtn">New Game</button>
+        </div>
+
+        <!-- Game Board -->
+        <div class="game-board" id="gameBoard">
+            <!-- Cards will be generated here by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Bootstrap 5.3.8 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+    <!-- Game JavaScript -->
+    <script>
+        // Game state object
+        const gameState = {
+            moves: 0,
+            timer: 0,
+            timerInterval: null,
+            difficulty: 'easy',
+            isPlaying: false,
+            cards: []
+        };
+
+        // Card values (8 pairs for 4x4 grid)
+        const cardValues = ['🎮', '🎯', '🎨', '🎭', '🎪', '🎸', '🎺', '🎹'];
+
+        // DOM elements
+        const movesDisplay = document.getElementById('moves');
+        const timerDisplay = document.getElementById('timer');
+        const gameBoard = document.getElementById('gameBoard');
+        const newGameBtn = document.getElementById('newGameBtn');
+        const difficultyBtns = document.querySelectorAll('.difficulty-btn');
+
+        // Initialize event listeners
+        function init() {
+            // Difficulty selector
+            difficultyBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    difficultyBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    gameState.difficulty = this.dataset.difficulty;
+                });
+            });
+
+            // New Game button
+            newGameBtn.addEventListener('click', startNewGame);
+
+            // Start initial game
+            startNewGame();
+
+            console.log('Iteration 1: Card grid with flip interactions - Complete!');
+        }
+
+        // Create card element
+        function createCard(value, index) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.dataset.value = value;
+            card.dataset.index = index;
+
+            card.innerHTML = `
+                <div class="card-inner">
+                    <div class="card-face card-front"></div>
+                    <div class="card-face card-back">${value}</div>
+                </div>
+            `;
+
+            // Add click event listener
+            card.addEventListener('click', handleCardClick);
+
+            return card;
+        }
+
+        // Handle card click
+        function handleCardClick(e) {
+            const card = e.currentTarget;
+            
+            // Prevent clicking already flipped cards
+            if (card.classList.contains('flipped')) {
+                return;
+            }
+
+            // Flip the card
+            card.classList.add('flipped');
+            
+            console.log(`Card flipped: ${card.dataset.value}`);
+        }
+
+        // Generate cards for the board
+        function generateCards() {
+            // Create pairs of cards
+            const cards = [...cardValues, ...cardValues];
+            
+            // Shuffle cards (Fisher-Yates shuffle)
+            for (let i = cards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cards[i], cards[j]] = [cards[j], cards[i]];
+            }
+
+            return cards;
+        }
+
+        // Start new game function
+        function startNewGame() {
+            console.log(`Starting new game with difficulty: ${gameState.difficulty}`);
+            
+            // Clear the board
+            gameBoard.innerHTML = '';
+            
+            // Reset stats
+            gameState.moves = 0;
+            gameState.timer = 0;
+            movesDisplay.textContent = '0';
+            timerDisplay.textContent = '00:00';
+            
+            // Generate and shuffle cards
+            const shuffledCards = generateCards();
+            gameState.cards = shuffledCards;
+            
+            // Create and append card elements
+            shuffledCards.forEach((value, index) => {
+                const card = createCard(value, index);
+                gameBoard.appendChild(card);
+            });
+
+            console.log('16 cards generated and shuffled');
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
